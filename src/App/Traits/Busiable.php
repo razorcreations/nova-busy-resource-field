@@ -1,18 +1,22 @@
 <?php
 
 namespace The3labsTeam\NovaBusyResourceField\App\Traits;
-
-use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 trait Busiable
 {
-    // BUSY
+    protected $userModel;
+
+    public function __construct()
+    {
+        // Dynamically get the User model class from the config
+        $this->userModel = config('nova-busy-resource.user_model', \App\Models\User::class);
+    }
 
     /**
      * Return the user who is busy with this resource
      */
-    public function busyFrom(User $user)
+    public function busyFrom(User $user) // Type-hint remains intact
     {
         $this->busier()->syncWithoutDetaching([$user->id => ['created_at' => now(), 'updated_at' => now()]]);
     }
@@ -37,7 +41,7 @@ trait Busiable
         return ! $this->isBusy();
     }
 
-    public function isBusyByUser(User $user): bool
+    public function isBusyByUser(User $user): bool // Type-hint remains intact
     {
         return $this->busier()->where('user_id', $user->id)->exists();
     }
@@ -55,6 +59,7 @@ trait Busiable
     //=== RELATIONSHIPS ===//
     public function busier(): MorphToMany
     {
-        return $this->morphToMany(User::class, 'busiable')->withPivot('created_at', 'updated_at');
+        // Dynamically resolve the class via the config
+        return $this->morphToMany($this->userModel, 'busiable')->withPivot('created_at', 'updated_at');
     }
 }
